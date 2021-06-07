@@ -121,7 +121,8 @@ def main():
                     print(f"skipped file: " + file)
                     # logging.exception(e)
 
-
+        for file in files_list:
+            os.remove(files_dir + file)
 
 
 if __name__ == "__main__":
