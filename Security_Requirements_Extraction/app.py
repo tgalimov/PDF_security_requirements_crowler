@@ -4,12 +4,12 @@ import os
 from os import listdir
 from os.path import isfile, join
 from typing import List, Optional
-from link_extractor import download_files
-
+from link_extractor import download_files, get_all_website_links
+from google_api import search_pdf
 import pandas as pd
 import requests
 import spacy
-# import streamlit as st
+import shutil
 from transformers import (
     T5Tokenizer, T5ForConditionalGeneration,
 )
@@ -21,6 +21,7 @@ from constants import (
 )   
 from pdf_processing import filter_line, retrieve_lines_from_pdf_file, preprocess
 from predict import predict, process_predictions
+import config
 
 
 def download_file_and_save(url, path):
@@ -91,24 +92,35 @@ def process_file(file_buffer: Optional[io.BytesIO]=None) -> List[str]:
     return security_relevant_sentences
 
 
-def show_extracted_sentences(sentences: List[str], file):
+def show_extracted_sentences(sentences: List[str], file, url):
     if not sentences:
-        # st.markdown("### No security-relevant sentences :(")
-        sentence = "### No security-relevant sentences :("
         pass
-    # st.markdown("### Extracted security-relevant sentences")
     for sentence in sentences:
-        # st.markdown(f"* {sentence}")
-        with open("./output/" + file.replace("pdf", "txt"), "a") as f:
+        with open(config.output_path + file.replace("pdf", "txt"), "a") as f:
             f.write(sentence + "\n")
+        # st.markdown(f"* {sentence}")
+    # uncomment if needs to dave file with parsed rows
+    # shutil.copyfile(config.temp_path + file, config.output_path + file)
+    with open(config.output_path + file.replace("pdf", "txt"), "a") as f:
+        f.write(f"source file link: " + url + "\n")
 
 def main():
-    # set_header()
-    with open("url_list.txt", "r") as f:
-        url_list = f.read().split("\n")
+    url_list = []
+    n = 0
+    if config.input_source == "google":
+        url_list = search_pdf(config.search_text, config.search_pages)
+    elif config.input_source == "url_list":
+        with open(config.input_url_list_file, "r") as f:
+            input_url_list = f.read().split("\n")
+            for url in input_url_list:
+                if url:
+                    url_list.extend(get_all_website_links(url))
+                else:
+                    continue
     for url in url_list:
+        n += 1
         download_files(url)
-        files_dir = "./temp/"
+        files_dir = config.temp_path
         files_list = [f for f in listdir(files_dir) if isfile(join(files_dir, f))]
         for file in files_list:
             with open(files_dir + file, "rb") as f:
@@ -116,13 +128,14 @@ def main():
                     uploaded_file = io.BytesIO(f.read()) #st.file_uploader("Choose a file", type=['pdf'])
                     if uploaded_file is not None:
                         security_requirements = process_file(uploaded_file)
-                        show_extracted_sentences(security_requirements, file)
+                        show_extracted_sentences(security_requirements, file, url)
                 except Exception as e:
                     print(f"skipped file: " + file)
                     # logging.exception(e)
 
         for file in files_list:
             os.remove(files_dir + file)
+    print(f"count of processed pdf: " + str(n))
 
 
 if __name__ == "__main__":

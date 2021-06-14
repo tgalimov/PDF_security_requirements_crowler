@@ -2,6 +2,8 @@ import requests
 from urllib.parse import urlparse, urljoin
 from bs4 import BeautifulSoup
 import colorama
+import config
+
 
 # init the colorama module
 colorama.init()
@@ -16,7 +18,7 @@ internal_urls = set()
 external_urls = set()
 
 total_urls_visited = 0
-
+request_row = config.search_text
 
 
 def is_valid(url):
@@ -55,26 +57,21 @@ def get_all_website_links(url):
         if domain_name not in href:
             # external link
             if href not in external_urls:
-                # print(f"{GRAY}[!] External link: {href}{RESET}")
                 external_urls.add(href)
             continue
-        # print(f"{GREEN}[*] Internal link: {href}{RESET}")
         urls.add(href)
         internal_urls.add(href)
-        # with open("links.txt", "w") as f:
-        #     f.write(str(urls))
     return urls
 
+
 def download_files(url):
-    links = get_all_website_links(url)
-    for link in links:
-        filename = list(reversed(link.split("/")))[0]
-        r = requests.get(link, allow_redirects=True)
-        with open("./temp/" + filename, 'wb') as f:
-            f.write(r.content)
+    filename = list(reversed(url.split("/")))[0]
+    r = requests.get(url, allow_redirects=True)
+    with open(config.temp_path + filename, 'wb') as f:
+        f.write(r.content)
 
 
-def crawl(url, max_urls=30):
+def crawl(url, max_urls=3000):
     """
     Crawls a web page and extracts all links.
     You'll find all links in `external_urls` and `internal_urls` global set variables.
@@ -83,12 +80,16 @@ def crawl(url, max_urls=30):
     """
     global total_urls_visited
     total_urls_visited += 1
-    # print(f"{YELLOW}[*] Crawling: {url}{RESET}")
     links = get_all_website_links(url)
     for link in links:
         if total_urls_visited > max_urls:
             break
         crawl(link, max_urls=max_urls)
+
+
+# def extract_link_from_search(links):
+#     filtered_list = list(filter(lambda cn: cn.endswith(".pdf"), links))
+#     return filtered_list
 
 
 if __name__ == "__main__":
@@ -97,7 +98,6 @@ if __name__ == "__main__":
     parser.add_argument("url", help="The URL to extract links from.")
     parser.add_argument("-m", "--max-urls", help="Number of max URLs to crawl, default is 30.", default=30, type=int)
 
-    # args = parser.parse_args()
     url = "" #args.url
     max_urls = 1000 #args.max_urls
     download_files(url)
@@ -109,13 +109,3 @@ if __name__ == "__main__":
     print("[+] Total crawled URLs:", max_urls)
 
     domain_name = urlparse(url).netloc
-    # save the internal links to a file
-    # with open(f"{domain_name}_internal_links.txt", "w") as f:
-    # with open("links.txt", "w") as f:
-    #     for internal_link in internal_urls:
-    #         print(get_all_website_links(url), file=f)
-    #
-    # # save the external links to a file
-    # with open(f"{domain_name}_external_links.txt", "w") as f:
-    #     for external_link in external_urls:
-    #         print(external_link.strip(), file=f)

@@ -1,30 +1,39 @@
 from googleapiclient.discovery import build
+import config
+
+service = build("customsearch", "v1",
+                developerKey=config.developerKey)
 
 
-def search_pdf(request_row):
-    # Build a service object for interacting with the API. Visit
-    # the Google APIs Console <http://code.google.com/apis/console>
-    # to get an API key for your own application.
-    service = build("customsearch", "v1",
-                    developerKey="AIzaSyDDYOkM9cjUJcD_iXBPjmTQJERRD5hJ7H0")
-
+def google_search(request_row, n):
     res = service.cse().list(
         q=request_row,
         cx='017576662512468239146:omuauf_lfve',
+        num=10,
+        start=n * 10,
     ).execute()
-    data = res["items"]
+    return res
+
+
+def google_search_next_pages(request_row):
+    # res = google_search(request_row)
+    service.cse().list(
+        q=request_row,
+        cx='017576662512468239146:omuauf_lfve',
+        num=10,
+    ).execute()
+
+
+def search_pdf(request_row, number_of_pages):
+    data = []
+    for page in range(number_of_pages):
+        res = google_search(request_row, page)
+        if "items" in res:
+            links_list = res["items"]
+            data.extend(links_list)
+        else:
+            continue
     links = list(map(lambda el: el["link"], data))
     filtered_list = list(filter(lambda cn: cn.endswith(".pdf"), links))
-    print(filtered_list)
-    return res
-    # pprint.pprint(res)
+    return filtered_list
 
-#
-# def get_links_from_google(request_row):
-#     response_data = search_result(request_row)
-#     result = response_data["items"]
-#     print(result)
-
-#
-# if __name__ == '__main__':
-#     search_result()
