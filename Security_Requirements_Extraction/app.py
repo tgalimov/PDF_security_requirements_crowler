@@ -95,14 +95,14 @@ def process_file(file_buffer: Optional[io.BytesIO]=None) -> List[str]:
 def show_extracted_sentences(sentences: List[str], file, url):
     if not sentences:
         pass
-    for sentence in sentences:
+    else:
+        for sentence in sentences:
+            with open(config.output_path + file.replace("pdf", "txt"), "a") as f:
+                f.write(sentence + "\n")
+        # uncomment if needs to dave file with parsed rows
+        # shutil.copyfile(config.temp_path + file, config.output_path + file)
         with open(config.output_path + file.replace("pdf", "txt"), "a") as f:
-            f.write(sentence + "\n")
-        # st.markdown(f"* {sentence}")
-    # uncomment if needs to dave file with parsed rows
-    # shutil.copyfile(config.temp_path + file, config.output_path + file)
-    with open(config.output_path + file.replace("pdf", "txt"), "a") as f:
-        f.write(f"source file link: " + url + "\n")
+            f.write(f"source file link: " + url + "\n")
 
 def main():
     url_list = []
