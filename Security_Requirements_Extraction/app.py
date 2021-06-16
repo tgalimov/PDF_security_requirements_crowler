@@ -125,7 +125,7 @@ def main():
         for file in files_list:
             with open(files_dir + file, "rb") as f:
                 try:
-                    uploaded_file = io.BytesIO(f.read()) #st.file_uploader("Choose a file", type=['pdf'])
+                    uploaded_file = io.BytesIO(f.read())
                     if uploaded_file is not None:
                         security_requirements = process_file(uploaded_file)
                         show_extracted_sentences(security_requirements, file, url)
